@@ -23,73 +23,70 @@ import okhttp3.ResponseBody;
 
 public class JccConfig implements Config {
 
-	private BaseUrl mBaseUrl;
+    private BaseUrl mBaseUrl;
 
-	private JccConfig() {
-	}
+    private JccConfig() {
+    }
 
-	public static JccConfig getInstance() {
-		return Singleton.INSTANCE.getInstance();
-	}
+    public static JccConfig getInstance() {
+        return Singleton.INSTANCE.getInstance();
+    }
 
-	private static enum Singleton {
-		INSTANCE;
+    private static enum Singleton {
+        INSTANCE;
 
-		private JccConfig singleton;
+        private JccConfig singleton;
 
-		private Singleton() {
-			singleton = new JccConfig();
-		}
+        private Singleton() {
+            singleton = new JccConfig();
+        }
 
-		public JccConfig getInstance() {
-			return singleton;
-		}
-	}
+        public JccConfig getInstance() {
+            return singleton;
+        }
+    }
 
-	public void setmBaseUrl(BaseUrl mBaseUrl) {
-		this.mBaseUrl = mBaseUrl;
-	}
+    public void setmBaseUrl(BaseUrl mBaseUrl) {
+        this.mBaseUrl = mBaseUrl;
+    }
 
-	public final OkHttpClient okHttpClient = new OkHttpClient.Builder().connectTimeout(30000, TimeUnit.MILLISECONDS)
-			.cookieJar(new CookieJar() {
-				private final Map<String, List<Cookie>> cookieStore = new HashMap<String, List<Cookie>>();
+    public final OkHttpClient okHttpClient = new OkHttpClient.Builder().connectTimeout(30000, TimeUnit.MILLISECONDS)
+            .cookieJar(new CookieJar() {
+                private final Map<String, List<Cookie>> cookieStore = new HashMap<String, List<Cookie>>();
 
-				public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
-					cookieStore.put(url.host(), cookies);
-				}
+                public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
+                    cookieStore.put(url.host(), cookies);
+                }
 
-				public List<Cookie> loadForRequest(HttpUrl url) {
-					List<Cookie> cookies = cookieStore.get(url.host());
-					return cookies != null ? cookies : new ArrayList<Cookie>();
-				}
-			}).build();
+                public List<Cookie> loadForRequest(HttpUrl url) {
+                    List<Cookie> cookies = cookieStore.get(url.host());
+                    return cookies != null ? cookies : new ArrayList<Cookie>();
+                }
+            }).build();
 
-	/**
-	 * get config
-	 * 
-	 * @param callback
-	 */
-	@Override
-	public void requestConfig(JCallback callBack) {
-		String url = mBaseUrl.getUrl() + JConstant.JC_REQUEST_CONFIG_ROUTE + "?t=" + System.currentTimeMillis();
-		Request request = new Request.Builder().url(url).build();
-		try {
-			Response response = okHttpClient.newCall(request).execute();
-			if (CommUtils.isSuccessful(response.code())) {
-				ResponseBody body = response.body();
-				String res = body.string();
-				ObjectMapper mapper = new ObjectMapper();
-				JsonNode actualObj = mapper.readTree(res);
-				String code = actualObj.get("code").asText();
-				body.close();
-				callBack.onResponse(code, res);
-			} else {
-				callBack.onFail(new Exception(CommUtils.formatExceptionMessage(response)));
-			}
-		} catch (IOException e) {
-			callBack.onFail(e);
-		}
+    /**
+     * get config
+     *
+     * @param callback
+     */
+    @Override
+    public void requestConfig(JCallback callBack) {
+        String url = mBaseUrl.getUrl() + JConstant.JC_REQUEST_CONFIG_ROUTE + "?t=" + System.currentTimeMillis();
+        Request request = new Request.Builder().url(url).build();
+        try {
+            Response response = okHttpClient.newCall(request).execute();
+            if (CommUtils.isSuccessful(response.code())) {
+                ResponseBody body = response.body();
+                String res = body.string().replace("\"swtc.top\":", "").trim();
+                body.close();
+                callBack.onResponse("", res);
+            } else {
+                callBack.onFail(new Exception(CommUtils.formatExceptionMessage(response)));
+            }
+        } catch (IOException e) {
+            callBack.onFail(e);
+        }
 
-	}
+    }
 
 }
